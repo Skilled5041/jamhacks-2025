@@ -29,10 +29,12 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    // Initial update when activated
-    if (vscode.window.activeTextEditor) {
-        gooseViewProvider.updateActiveEditorCode();
-    }
+    // initial update when activated - delay to ensure _view is set
+    setTimeout(() => {
+        if (vscode.window.activeTextEditor && gooseViewProvider._view) {
+            gooseViewProvider.updateActiveEditorCode();
+        }
+    }, 500);
 }
 
 class GooseViewProvider implements vscode.WebviewViewProvider {
@@ -62,6 +64,16 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
         }
     }
 
+    private insertSnippetIntoEditor(text: string) {
+        const editor = vscode.window.activeTextEditor;
+        if (editor) {
+            const snippet = new vscode.SnippetString(
+                text
+            );
+            editor.insertSnippet(snippet);
+        }
+    }
+
     resolveWebviewView(
         webviewView: vscode.WebviewView,
         context: vscode.WebviewViewResolveContext,
@@ -83,6 +95,8 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
             } else if (message.command === "playDialogSound") {
                 const soundFile = `dialog/Retro_Single_v${message.soundNumber}_wav.wav`;
                 this.playAudioWithFfplay(soundFile, 20);
+            } else if (message.command === "insertCodeSnippet") {
+                this.insertSnippetIntoEditor(message.code);
             }
         });
 
@@ -348,6 +362,10 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 let responseBuffer = "";
                 let isStreaming = false;
                 let isFirstMessage = true;
+
+                let isCodeSnippet = false;
+                const codeSnippetMarker = "💎";
+                let codeSnippet = "";
                 
                 helpSocket.onmessage = function(event) {
                     const data = event.data;
@@ -357,6 +375,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                         console.log("Stream started");
                         responseBuffer = "";
                         dialogElement.textContent = "";
+                        return;
                     }
                     
                     // Handle stream end marker
@@ -365,7 +384,28 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                         isStreaming = false;
                     }
                     
-                    else {
+                    if (responseBuffer === "") {
+                        dialogElement.textContent = "";
+                        responseBuffer = data;
+                        typeDialog(responseBuffer);
+                    } else {
+
+                    if (data.includes(codeSnippetMarker)) {
+                            isCodeSnippet = !isCodeSnippet;
+                            if (!isCodeSnippet) {
+                                if (!data.startsWith(codeSnippetMarker)) {
+                                    codeSnippet += data.splitText(codeSnippetMarker)[0];
+                                }
+                                vscode.postMessage({ command: "insertCodeSnippet", code: codeSnippet });
+                                return;
+                            } else if(!data.endsWith(codeSnippetMarker)){
+                                codeSnippet += data.splitText(codeSnippetMarker).last();
+                            }
+                        } else if(isCodeSnippet){
+                            codeSnippet += data;
+                            return;
+                        }
+                            
                         // Append to buffer and update the dialog text
                         responseBuffer += data;
                         console.log(responseBuffer)
