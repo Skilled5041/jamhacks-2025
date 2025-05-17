@@ -103,23 +103,25 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
+            @import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap');
             :root {
-                --button-color: #9d6248; /* Define button color here */
+                --button-color:rgb(129, 82, 61); /* Define button color here */
             }
         
             button {
                 margin: 5px;
+                font-family: "Pixelify Sans", sans-serif;
                 padding: 10px 20px;
                 font-size: 16px;
                 cursor: pointer;
                 border: none;
-                border-radius: 4px;
+                border-radius: 24px;
                 background-color: var(--button-color); /* Use the variable */
                 color: #fcefe0;
             }
         
             button:hover {
-                background-color: darkbrown; /* Optional hover effect */
+                background-color: rgb(106, 65, 49);
             }
         
             body {
@@ -129,19 +131,36 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 background-color: #efeada; /* Set background to white */
                 color: var(--vscode-editor-foreground); /* Ensure text color remains readable */
             }
+            .frame {
+                border: 3px solid #bfae82;
+                border-radius: 18px;
+                background: rgb(205, 152, 105);
+                border-color: rgb(205, 152, 105);
+                max-length: 320px;
+                length: 60%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                margin: 20px auto 0 auto;
+                }
             .title {
+                font-family: "Pixelify Sans", sans-serif;
                 text-align: center;
-                font-size: 24px;
+                font-size: 29px;
                 font-weight: bold;
                 margin-bottom: 20px;
+                margin-top: 24px;
                 color: var(--vscode-editor-background);
             }
             .dialog {
-                margin-top: 20px;
+                font-family: "Pixelify Sans", sans-serif;
+                margin-top: 12px;
+                margin-bottom: 12px;
                 padding: 10px;
-                background-color: var(--vscode-editor-background);
+                color: rgb(240, 240, 240);
+                background-color: rgb(65, 58, 53);
                 border: 1px solid var(--vscode-editor-foreground);
-                border-radius: 4px;
+                border-radius: 20px;
                 font-style: italic;
                 min-height: 50px;
             }
@@ -163,8 +182,12 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 height: auto;
             }
             .button-container {
-                margin-top: 20px;
+                margin-top: 0;
+                display: flex;
+                justify-content: center;
+                gap: 16px;
                 text-align: center;
+                align-items: center;
             }
             
             .input-container {
@@ -177,38 +200,44 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
             }
             
             .input-container-input {
-                width: 95%;
+                width: 92%;
                 min-height: 60px;
                 padding: 10px;
                 margin-bottom: 10px;
                 font-size: 16px;
                 font-family: var(--vscode-editor-font-family), monospace;
                 border: 1px solid var(--vscode-editor-foreground);
-                border-radius: 4px;
-                background-color: var(--vscode-editor-background);
+                border-radius: 20px;
+                background-color: rgb(65, 58, 53);;
                 color: var(--vscode-input-foreground);
             }
             
             .submit-feature-button {
                 width: 101%;
                 transform: translateX(-5px);
+                border-radius: 20px;
             }
         </style>
         <title>Mr. Goose</title>
     </head>
     <body>
-        <div class="title">Mr. Goose</div>
-        <img src="${imageUri}" alt="Mr. Goose" />
-        <div class="dialog" id="dialog"></div>
-        <div class="button-container" id="buttonContainer">
-            <button id="addFeatureButton">Add New Feature</button>
-            <button id="debugButton">Debug</button>
+        <div class="frame">
+            <div class="title">Mr. Goose</div>
+            <img src="${imageUri}" alt="Mr. Goose" />
         </div>
-        <div class="input-container" id="inputContainer" style="display: none;">
-            <textarea class="input-container-input" id="featureInput" placeholder="Describe your feature..."></textarea>
-            <button class="submit-feature-button" id="submitFeatureButton">Submit</button>
-        </div>
+<<<<<<< Updated upstream
         <div class="file-tag" id="fileTag"></div>
+=======
+            <div class="dialog" id="dialog"></div>
+            <div class="button-container" id="buttonContainer">
+                <button id="addFeatureButton">Add New Feature</button>
+                <button id="debugButton">Debug</button>
+            </div>
+            <div class="input-container" id="inputContainer" style="display: none;">
+                <textarea class="input-container-input" id="featureInput" placeholder="Describe your feature..."></textarea>
+                <button class="submit-feature-button" id="submitFeatureButton">Submit</button>
+            </div>
+>>>>>>> Stashed changes
         <script>
             const dialogText = "🪿 Honk! Are we adding something shiny and new, or chasing down a sneaky bug? And where in this messy nest of code are we poking today?";
             const dialogElement = document.getElementById("dialog");
