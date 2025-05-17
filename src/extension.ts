@@ -7,12 +7,51 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider("gooseView", gooseViewProvider)
     );
+
+    // Listen for active editor changes to update code context
+    vscode.window.onDidChangeActiveTextEditor(() => {
+        if (gooseViewProvider._view) {
+            gooseViewProvider.updateActiveEditorCode();
+        }
+    });
+
+    context.subscriptions.push(
+        vscode.workspace.onDidSaveTextDocument(() => {
+            if (gooseViewProvider._view) {
+                gooseViewProvider.updateActiveEditorCode();
+            }
+        })
+    );
+
+    // Initial update when activated
+    if (vscode.window.activeTextEditor) {
+        gooseViewProvider.updateActiveEditorCode();
+    }
 }
 
 class GooseViewProvider implements vscode.WebviewViewProvider {
-    private _view?: vscode.WebviewView;
+    public _view?: vscode.WebviewView;
 
     constructor(private readonly _extensionUri: vscode.Uri) {
+    }
+
+    // Get the current active editor's content and send it to the webview
+    public updateActiveEditorCode() {
+        if (!this._view) return;
+
+        const editor = vscode.window.activeTextEditor;
+        if (editor) {
+            const document = editor.document;
+            const code = document.getText();
+            const fileName = document.fileName;
+
+            // Send the code to the webview
+            this._view.webview.postMessage({
+                command: 'updateEditorCode',
+                code: code,
+                fileName: fileName
+            });
+        }
     }
 
     resolveWebviewView(
@@ -106,6 +145,17 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 font-style: italic;
                 min-height: 50px;
             }
+            .file-tag {
+                margin-top: 5px;
+                padding: 4px 8px;
+                background-color: var(--vscode-editor-background);
+                border: 1px solid var(--vscode-editor-foreground);
+                border-radius: 4px;
+                font-size: 12px;
+                display: inline-block;
+                color: var(--vscode-foreground);
+                opacity: 0.7;
+            }
             img {
                 display: block;
                 margin: 20px auto;
@@ -158,28 +208,53 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
             <textarea class="input-container-input" id="featureInput" placeholder="Describe your feature..."></textarea>
             <button class="submit-feature-button" id="submitFeatureButton">Submit</button>
         </div>
+        <div class="file-tag" id="fileTag"></div>
         <script>
             const dialogText = "🪿 Honk! Are we adding something shiny and new, or chasing down a sneaky bug? And where in this messy nest of code are we poking today?";
             const dialogElement = document.getElementById("dialog");
+            const fileTagElement = document.getElementById("fileTag");
             const buttonContainer = document.getElementById("buttonContainer");
             const gooseImage = document.querySelector("img");
             const vscode = acquireVsCodeApi();
+            
+            const serverURL = "ws://localhost:3000";
+            const helpSocket = new WebSocket(serverURL + "/help");
+            
             let typingTimeout; // Store the timeout ID
             let index = 0;
             let isDialogPlaying = false; // Track if dialog is playing
+            let currentEditorCode = ""; // Store current editor code
+            let currentFileName = "";   // Store current file name
+            
+            // Listen for editor code updates from extension
+            window.addEventListener('message', event => {
+                const message = event.data;
+                
+                if (message.command === 'updateEditorCode') {
+                    currentEditorCode = message.code;
+                    currentFileName = message.fileName;
+                    fileTagElement.textContent = currentFileName; // Update file tag
+                    console.log("Received editor code for:", currentFileName);
+                }
+            });
             
             function typeDialog(text, callback) {
                 if (typingTimeout) {
                     clearTimeout(typingTimeout); // Stop any ongoing typing effect
                 }
-                dialogElement.textContent = ""; // Clear existing text
                 index = 0;
+                dialogElement.textContent = ""; // Clear previous text
+                dialogElement.innerHTML = ""; // Also clear HTML content
                 isDialogPlaying = true;
                 gooseImage.src = gooseImage.src.replace("goose_closed.png", "goose_animated.gif"); // Show animated GIF
-            
+                
                 function type() {
                     if (index < text.length) {
-                        dialogElement.textContent += text.charAt(index);
+                        const char = text.charAt(index);
+                        
+                        dialogElement.innerHTML += char;
+                      
+                      
                         index++;
                                     
                         if (index % 3 === 0) {
@@ -199,6 +274,49 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 type();
             }
             
+            // Handle streamed responses better
+            function handleStreamedResponse() {
+                let responseBuffer = "";
+                let isStreaming = false;
+                
+                helpSocket.onmessage = function(event) {
+                    const data = event.data;
+                    
+                    // Handle stream start marker
+                    if (data === "Startstreaming") {
+                        console.log("Stream started");
+                        responseBuffer = "";
+                        dialogElement.textContent = "";
+                        return;
+                    }
+                    
+                    // Handle stream end marker
+                    if (data === "Endstreaming") {
+                        console.log("Stream ended");
+                        isStreaming = false;
+                        return;
+                    }
+                    
+                    if (responseBuffer === "") {
+                        dialogElement.textContent = "";
+                        responseBuffer = data;
+                        typeDialog(responseBuffer);
+                    } else {
+                        // Append to buffer and update the dialog text
+                        responseBuffer += data;
+                        
+                        // Stop current typing
+                        if (typingTimeout) {
+                            clearTimeout(typingTimeout);
+                        }
+                        
+                        // Start new typing with updated text
+                        dialogElement.textContent = "";
+                        typeDialog(responseBuffer);
+                    }
+                };
+            }
+            
             // Start typing effect
             setTimeout(() => typeDialog(dialogText), 500);
             
@@ -214,7 +332,9 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
             document.getElementById("submitFeatureButton").addEventListener("click", () => {
                 const featureInput = document.getElementById("featureInput").value;
                 if (featureInput.trim() !== "") {
-                    typeDialog(\`🪿 Honk! That sounds like a great idea. Let's get to work!\`);
+                    helpSocket.send(JSON.stringify({ message: featureInput, code: currentEditorCode }));
+                    dialogElement.textContent = "";
+                    handleStreamedResponse();
                     document.getElementById("inputContainer").style.display = "none"; // Hide input box
                     vscode.postMessage({ command: "submitFeature", feature: featureInput });
                     vscode.postMessage({ command: "playHonk", honkFile: \`honk${Math.floor(Math.random() * 2) + 1}.mp3\` });
