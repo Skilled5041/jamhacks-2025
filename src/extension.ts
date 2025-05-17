@@ -32,7 +32,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
         // Add the message listener here
         webviewView.webview.onDidReceiveMessage((message) => {
             if (message.command === "playHonk") {
-                this.playAudioWithFfplay("honk1.mp3");
+                this.playAudioWithFfplay(message.honkFile);
             } else if (message.command === "playDialogSound") {
                 const soundFile = `dialog/Fast_Complete_v${message.soundNumber}_wav.wav`;
                 this.playAudioWithFfplay(soundFile, 20);
@@ -76,7 +76,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 border: none;
                 border-radius: 4px;
                 background-color: var(--button-color); /* Use the variable */
-                color: var(--vscode-button-foreground);
+                color: #fcefe0;
             }
         
             button:hover {
@@ -208,7 +208,8 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 typeDialog("🪿 Honk! What shiny idea are we hatching today? What should it do when it flaps to life?");
                 buttonContainer.style.display = "none"; // Hide buttons
                 document.getElementById("inputContainer").style.display = "block"; // Show input box
-                vscode.postMessage({ command: "playHonk" });
+                // Play a random honk sound
+                vscode.postMessage({ command: "playHonk", honkFile: \`honk${Math.floor(Math.random() * 2) + 1}.mp3\` });
             });
             
             document.getElementById("submitFeatureButton").addEventListener("click", () => {
@@ -217,6 +218,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                     typeDialog(\`🪿 Honk! That sounds like a great idea. Let's get to work!\`);
                     document.getElementById("inputContainer").style.display = "none"; // Hide input box
                     vscode.postMessage({ command: "submitFeature", feature: featureInput });
+                    vscode.postMessage({ command: "playHonk", honkFile: \`honk${Math.floor(Math.random() * 2) + 1}.mp3\` });
                 }
             });
             
