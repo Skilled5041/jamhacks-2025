@@ -284,8 +284,13 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 function type() {
                     if (index < text.length) {
                         const char = text.charAt(index);
+                        if (char + text.charAt(index + 1) === "🆕") {
+                            dialogElement.innerHTML += "<br>";
+                            index++;
+                        } else {
+                            dialogElement.innerHTML += char;
+                        }
                         
-                        dialogElement.innerHTML += char;
                       
                       
                         index++;
@@ -314,7 +319,13 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 function type() {
                     if (index < newText.length) {
                         const char = newText.charAt(index);
-                        dialogElement.innerHTML += char;
+                        if (char + newText.charAt(index + 1) === "🆕") {
+                            // Add a line break for the new feature emoji
+                            dialogElement.innerHTML += "<br>";
+                            index++;
+                        } else {
+                            dialogElement.innerHTML += char;
+                        }
                         index++;
                         if ((startLength + index) % 3 === 0) {
                             vscode.postMessage({ command: "playDialogSound", soundNumber: 1 });
