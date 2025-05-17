@@ -1,51 +1,74 @@
-import * as vscode from "vscode";
-import * as path from "path";
-import { exec } from "child_process";
-
-export function activate(context: vscode.ExtensionContext) {
-    const gooseViewProvider = new GooseViewProvider(context.extensionUri);
-    context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider("gooseView", gooseViewProvider)
-    );
-}
-
-class GooseViewProvider implements vscode.WebviewViewProvider {
-    private _view?: vscode.WebviewView;
-
-    constructor(private readonly _extensionUri: vscode.Uri) {
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
     }
-
-    resolveWebviewView(
-        webviewView: vscode.WebviewView,
-        context: vscode.WebviewViewResolveContext,
-        _token: vscode.CancellationToken
-    ) {
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.activate = activate;
+const vscode = __importStar(require("vscode"));
+const path = __importStar(require("path"));
+const child_process_1 = require("child_process");
+function activate(context) {
+    const gooseViewProvider = new GooseViewProvider(context.extensionUri);
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider("gooseView", gooseViewProvider));
+}
+class GooseViewProvider {
+    _extensionUri;
+    _view;
+    constructor(_extensionUri) {
+        this._extensionUri = _extensionUri;
+    }
+    resolveWebviewView(webviewView, context, _token) {
         this._view = webviewView;
-
         webviewView.webview.options = {
             enableScripts: true,
             localResourceRoots: [this._extensionUri],
         };
-
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
-
         // Add the message listener here
         webviewView.webview.onDidReceiveMessage((message) => {
             if (message.command === "playHonk") {
                 this.playAudioWithFfplay("honk1.mp3");
-            } else if (message.command === "playDialogSound") {
+            }
+            else if (message.command === "playDialogSound") {
                 const soundFile = `dialog/Fast_Complete_v${message.soundNumber}_wav.wav`;
                 this.playAudioWithFfplay(soundFile, 20);
             }
         });
-
         this.playAudioWithFfplay("squawk1.mp3");
     }
-
-    public playAudioWithFfplay(fileName: string, volume: number = 100) {
+    playAudioWithFfplay(fileName, volume = 100) {
         const audioPath = path.join(this._extensionUri.fsPath, "assets", fileName);
-
-        exec(`ffplay -nodisp -autoexit -volume ${volume} "${audioPath}"`, (error, stdout, stderr) => {
+        (0, child_process_1.exec)(`ffplay -nodisp -autoexit -volume ${volume} "${audioPath}"`, (error, stdout, stderr) => {
             if (error) {
                 console.error("Error playing audio with ffplay:", error);
                 return;
@@ -53,11 +76,9 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
             console.log("Audio playback complete:", stdout || stderr);
         });
     }
-
-    private _getHtmlForWebview(webview: vscode.Webview): string {
+    _getHtmlForWebview(webview) {
         const imagePath = vscode.Uri.joinPath(this._extensionUri, "assets", "goose.png");
         const imageUri = webview.asWebviewUri(imagePath);
-
         return `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -170,3 +191,4 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
     </html>`;
     }
 }
+//# sourceMappingURL=extension.js.map
