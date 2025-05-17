@@ -492,7 +492,11 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 buttonContainer.style.display = "none"; // Hide buttons
                 document.getElementById("inputContainer").style.display = "block"; // Show input box
                 // Play a random honk sound
-                vscode.postMessage({ command: "playHonk", honkFile: \`honk${Math.floor(Math.random() * 2) + 1}.mp3\` });
+                vscode.postMessage({ command: "playHonk", honkFile: \`honk${Math.floor(Math.random() * 3) + 1}.mp3\` });
+            });
+            
+            document.getElementById("mrgoose").addEventListener("click", () => {
+                vscode.postMessage({ command: "playHonk", honkFile: \`honk${Math.floor(Math.random() * 3) + 1}.mp3\` });
             });
             
             document.getElementById("submitFeatureButton").addEventListener("click", () => {
