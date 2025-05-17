@@ -64,6 +64,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
 
   private insertSnippetIntoEditor(text: string) {
     const editor = vscode.window.activeTextEditor;
+    // currently enters code snippet where the cursor is
     if (editor) {
       editor.edit((editBuilder) => {
         editBuilder.insert(editor.selection.active, text);
