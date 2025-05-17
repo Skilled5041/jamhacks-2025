@@ -14,10 +14,28 @@
   "contributes": {
     "commands": [
       {
-        "command": "mrgoose.helloWorld",
-        "title": "Hello World"
+        "command": "mrgoose.addColor",
+        "title": "Add color"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "mrgoose-sidebar",
+          "title": "MrGoose",
+          "icon": "$(watch)"
+        }
+      ]
+    },
+    "views": {
+      "mrgoose-sidebar": [
+        {
+          "id": "gooseView",
+          "name": "MrGoose",
+          "type": "webview"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
