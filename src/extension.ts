@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { exec } from "child_process";
+import {exec} from "child_process";
 
 export function activate(context: vscode.ExtensionContext) {
     const gooseViewProvider = new GooseViewProvider(context.extensionUri);
@@ -10,6 +10,12 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Listen for active editor changes to update code context
     vscode.window.onDidChangeActiveTextEditor(() => {
+        if (gooseViewProvider._view) {
+            gooseViewProvider.updateActiveEditorCode();
+        }
+    });
+
+    vscode.workspace.onDidOpenTextDocument(() => {
         if (gooseViewProvider._view) {
             gooseViewProvider.updateActiveEditorCode();
         }
@@ -37,7 +43,9 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
 
     // Get the current active editor's content and send it to the webview
     public updateActiveEditorCode() {
-        if (!this._view) return;
+        if (!this._view) {
+            return;
+        }
 
         const editor = vscode.window.activeTextEditor;
         if (editor) {
@@ -335,7 +343,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                     helpSocket.send(JSON.stringify({ message: featureInput, code: currentEditorCode }));
                     dialogElement.textContent = "";
                     handleStreamedResponse();
-                    document.getElementById("inputContainer").style.display = "none"; // Hide input box
+                    // document.getElementById("inputContainer").style.display = "none"; // Hide input box
                     vscode.postMessage({ command: "submitFeature", feature: featureInput });
                     vscode.postMessage({ command: "playHonk", honkFile: \`honk${Math.floor(Math.random() * 2) + 1}.mp3\` });
                 }
