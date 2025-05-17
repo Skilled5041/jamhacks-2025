@@ -239,13 +239,34 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 transform: translateX(-5px);
                 border-radius: 20px;
             }
+            
+            .code-snippet {
+                background-color: rgb(65, 58, 53);
+                color: rgb(240, 240, 240);
+                padding: 2px 4px;
+                border-radius: 4px;
+                font-family: "JetBrains Mono", monospace;
+                font-size: 14px;
+                font-style: normal;
+                display: inline-block;
+            }
+            
+            .mrgoose {
+                cursor: pointer; 
+                transition: transform 0.2s ease-in-out;
+            }
+            
+            .mrgoose:hover {
+                transform: scale(1.1);
+                transition: transform 0.2s ease-in-out;
+            }
         </style>
         <title>Mr. Goose</title>
     </head>
     <body>
         <div class="frame">
             <div class="title">Mr. Goose</div>
-            <img src="${imageUri}" alt="Mr. Goose" />
+            <img id="mrgoose" class="mrgoose" src="${imageUri}" alt="Mr. Goose" />
         </div>
         <div class="file-tag" id="fileTag"></div>
             <div class="dialog" id="dialog"></div>
@@ -272,6 +293,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
             let isDialogPlaying = false; // Track if dialog is playing
             let currentEditorCode = ""; // Store current editor code
             let currentFileName = "";   // Store current file name
+            let insideCodeSnippet = false;
             
             // Listen for editor code updates from extension
             window.addEventListener('message', event => {
@@ -299,10 +321,28 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                     if (index < text.length) {
                         const char = text.charAt(index);
                         if (char + text.charAt(index + 1) === "🆕") {
-                            dialogElement.innerHTML += "<br>";
+                            if (insideCodeSnippet) {
+                                dialogElement.innerHTML = dialogElement.innerHTML.substring(0, dialogElement.innerHTML.length - 7) + "<br>" + "</span>";
+                            } else {
+                                dialogElement.innerHTML += "<br>";
+                            }
                             index++;
+                        }  else if (char === "\`" && text.charAt(index + 1) === "\`" && text.charAt(index + 2) === "\`") {
+                            if (insideCodeSnippet) {
+                                insideCodeSnippet = false;
+                            } else {
+                                dialogElement.innerHTML += "<br>";
+                                // Add a span with a class for styling
+                                dialogElement.innerHTML += '<span class="code-snippet"></span>';
+                                insideCodeSnippet = true;   
+                            }
+                            index += 2;
                         } else {
-                            dialogElement.innerHTML += char;
+                            if (insideCodeSnippet) {
+                                dialogElement.innerHTML = dialogElement.innerHTML.substring(0, dialogElement.innerHTML.length - 7) + char + "</span>";
+                            } else {
+                                dialogElement.innerHTML += char;
+                            }
                         }
                         index++;
                                     
@@ -331,11 +371,28 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                     if (index < newText.length) {
                         const char = newText.charAt(index);
                         if (char + newText.charAt(index + 1) === "🆕") {
-                            // Add a line break for the new feature emoji
-                            dialogElement.innerHTML += "<br>";
+                            if (insideCodeSnippet) {
+                                dialogElement.innerHTML = dialogElement.innerHTML.substring(0, dialogElement.innerHTML.length - 7) + "<br>" + "</span>";
+                            } else {
+                                dialogElement.innerHTML += "<br>";
+                            }
                             index++;
+                        } else if (char === "\`" && newText.charAt(index + 1) === "\`" && newText.charAt(index + 2) === "\`") {
+                            if (insideCodeSnippet) {
+                                insideCodeSnippet = false;
+                            } else {
+                                dialogElement.innerHTML += "<br>";
+                                // Add a span with a class for styling
+                                dialogElement.innerHTML += '<span class="code-snippet"></span>';
+                                insideCodeSnippet = true;   
+                            }
+                            index += 2;
                         } else {
-                            dialogElement.innerHTML += char;
+                            if (insideCodeSnippet) {
+                                dialogElement.innerHTML = dialogElement.innerHTML.substring(0, dialogElement.innerHTML.length - 7) + char + "</span>";
+                            } else {
+                                dialogElement.innerHTML += char;
+                            }
                         }
                         index++;
                         if ((startLength + index) % 3 === 0) {
@@ -404,7 +461,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
 
                         // Append to buffer and update the dialog text
                         responseBuffer += data;
-                        console.log(responseBuffer)
+                        console.log(responseBuffer);
                         
                         // Stop current typing
                         if (typingTimeout) {
@@ -419,7 +476,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                         } else {
                             // Get the text that still needs to be typed
                             const difference = responseBuffer.substring(dialogElement.textContent.length);
-                            appendToDialog(difference)
+                            appendToDialog(difference);
                         }
                         
                     }
