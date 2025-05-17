@@ -34,7 +34,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
             if (message.command === "playHonk") {
                 this.playAudioWithFfplay(message.honkFile);
             } else if (message.command === "playDialogSound") {
-                const soundFile = `dialog/Fast_Complete_v${message.soundNumber}_wav.wav`;
+                const soundFile = `dialog/Retro_Single_v${message.soundNumber}_wav.wav`;
                 this.playAudioWithFfplay(soundFile, 20);
             }
         });
@@ -181,10 +181,9 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                     if (index < text.length) {
                         dialogElement.textContent += text.charAt(index);
                         index++;
-            
-                        // Play dialog sound every six characters
-                        if (index % 6 === 0) {
-                            const soundNumber = Math.floor(Math.random() * 4) + 1; // Random number between 1 and 4
+                                    
+                        if (index % 3 === 0) {
+                            const soundNumber = 1;
                             vscode.postMessage({ command: "playDialogSound", soundNumber });
                         }
             
