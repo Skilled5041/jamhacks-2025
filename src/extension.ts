@@ -298,10 +298,8 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 function type() {
                     if (index < text.length) {
                         const char = text.charAt(index);
-                        
                         dialogElement.innerHTML += char;
-                      
-                      
+                    
                         index++;
                                     
                         if (index % 3 === 0) {
@@ -349,7 +347,6 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
             // Handle streamed responses better
             function handleStreamedResponse() {
                 let responseBuffer = "";
-                let isStreaming = false;
                 let isFirstMessage = true;
 
                 let isCodeSnippet = false;
@@ -370,7 +367,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                     // Handle stream end marker
                     else if (data === "Endstreaming") {
                         console.log("Stream ended");
-                        isStreaming = false;
+                        return;
                     }
                     
                     if (responseBuffer === "") {
@@ -383,18 +380,18 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                             isCodeSnippet = !isCodeSnippet;
                             if (!isCodeSnippet) {
                                 if (!data.startsWith(codeSnippetMarker)) {
-                                    codeSnippet += data.splitText(codeSnippetMarker)[0];
+                                    codeSnippet += data.split(codeSnippetMarker)[0];
                                 }
                                 vscode.postMessage({ command: "insertCodeSnippet", code: codeSnippet });
                                 return;
                             } else if(!data.endsWith(codeSnippetMarker)){
-                                codeSnippet += data.splitText(codeSnippetMarker).last();
+                                codeSnippet += data.split(codeSnippetMarker).last();
                             }
                         } else if(isCodeSnippet){
                             codeSnippet += data;
                             return;
                         }
-                            
+
                         // Append to buffer and update the dialog text
                         responseBuffer += data;
                         console.log(responseBuffer)
