@@ -3,101 +3,83 @@ import * as path from "path";
 import { exec } from "child_process";
 
 export function activate(context: vscode.ExtensionContext) {
-    const gooseViewProvider = new GooseViewProvider(context.extensionUri);
-    context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider("gooseView", gooseViewProvider)
-    );
-
-    // Listen for active editor changes to update code context
-    vscode.window.onDidChangeActiveTextEditor(() => {
-        if (gooseViewProvider._view) {
-            gooseViewProvider.updateActiveEditorCode();
-        }
-    });
-
-    context.subscriptions.push(
-        vscode.workspace.onDidSaveTextDocument(() => {
-            if (gooseViewProvider._view) {
-                gooseViewProvider.updateActiveEditorCode();
-            }
-        })
-    );
-
-    // Initial update when activated
-    if (vscode.window.activeTextEditor) {
-        gooseViewProvider.updateActiveEditorCode();
-    }
+  const gooseViewProvider = new GooseViewProvider(context.extensionUri);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider("gooseView", gooseViewProvider)
+  );
 }
 
 class GooseViewProvider implements vscode.WebviewViewProvider {
-    public _view?: vscode.WebviewView;
+  private _view?: vscode.WebviewView;
 
-    constructor(private readonly _extensionUri: vscode.Uri) {
-    }
+  constructor(private readonly _extensionUri: vscode.Uri) {}
 
-    // Get the current active editor's content and send it to the webview
-    public updateActiveEditorCode() {
-        if (!this._view) return;
+  resolveWebviewView(
+    webviewView: vscode.WebviewView,
+    context: vscode.WebviewViewResolveContext,
+    _token: vscode.CancellationToken
+  ) {
+    this._view = webviewView;
 
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-            const document = editor.document;
-            const code = document.getText();
-            const fileName = document.fileName;
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this._extensionUri],
+    };
 
-            // Send the code to the webview
-            this._view.webview.postMessage({
-                command: 'updateEditorCode',
-                code: code,
-                fileName: fileName
-            });
+    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+
+    // Add the message listener here
+    webviewView.webview.onDidReceiveMessage((message) => {
+      switch (message.command) {
+        case "playHonk":
+          this.playAudioWithFfplay(message.honkFile);
+          break;
+        case "playDialogSound":
+          const soundFile = `dialog/Retro_Single_v${message.soundNumber}_wav.wav`;
+          this.playAudioWithFfplay(soundFile, 20);
+          break;
+        case "insertSnippet": // NEW CASE
+          this.insertSnippetIntoEditor(message.text);
+          break;
+      }
+    });
+
+    this.playAudioWithFfplay("squawk1.mp3");
+  }
+
+  public playAudioWithFfplay(fileName: string, volume: number = 100) {
+    const audioPath = path.join(this._extensionUri.fsPath, "assets", fileName);
+
+    exec(
+      `ffplay -nodisp -autoexit -volume ${volume} "${audioPath}"`,
+      (error, stdout, stderr) => {
+        if (error) {
+          console.error("Error playing audio with ffplay:", error);
+          return;
         }
+        console.log("Audio playback complete:", stdout || stderr);
+      }
+    );
+  }
+
+  private insertSnippetIntoEditor(text: string) {
+    const editor = vscode.window.activeTextEditor;
+    if (editor) {
+      editor.edit((editBuilder) => {
+        editBuilder.insert(editor.selection.active, text);
+      });
     }
+  }
 
-    resolveWebviewView(
-        webviewView: vscode.WebviewView,
-        context: vscode.WebviewViewResolveContext,
-        _token: vscode.CancellationToken
-    ) {
-        this._view = webviewView;
+  private _getHtmlForWebview(webview: vscode.Webview): string {
+    const imagePath = vscode.Uri.joinPath(
+      this._extensionUri,
+      "assets",
+      "goose_animated.gif"
+    );
+    const imageUri = webview.asWebviewUri(imagePath);
 
-        webviewView.webview.options = {
-            enableScripts: true,
-            localResourceRoots: [this._extensionUri],
-        };
-
-        webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
-
-        // Add the message listener here
-        webviewView.webview.onDidReceiveMessage((message) => {
-            if (message.command === "playHonk") {
-                this.playAudioWithFfplay(message.honkFile);
-            } else if (message.command === "playDialogSound") {
-                const soundFile = `dialog/Retro_Single_v${message.soundNumber}_wav.wav`;
-                this.playAudioWithFfplay(soundFile, 20);
-            }
-        });
-
-        this.playAudioWithFfplay("squawk1.mp3");
-    }
-
-    public playAudioWithFfplay(fileName: string, volume: number = 100) {
-        const audioPath = path.join(this._extensionUri.fsPath, "assets", fileName);
-
-        exec(`ffplay -nodisp -autoexit -volume ${volume} "${audioPath}"`, (error, stdout, stderr) => {
-            if (error) {
-                console.error("Error playing audio with ffplay:", error);
-                return;
-            }
-            console.log("Audio playback complete:", stdout || stderr);
-        });
-    }
-
-    private _getHtmlForWebview(webview: vscode.Webview): string {
-        const imagePath = vscode.Uri.joinPath(this._extensionUri, "assets", "goose_animated.gif");
-        const imageUri = webview.asWebviewUri(imagePath);
-
-        return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
@@ -145,17 +127,6 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 font-style: italic;
                 min-height: 50px;
             }
-            .file-tag {
-                margin-top: 5px;
-                padding: 4px 8px;
-                background-color: var(--vscode-editor-background);
-                border: 1px solid var(--vscode-editor-foreground);
-                border-radius: 4px;
-                font-size: 12px;
-                display: inline-block;
-                color: var(--vscode-foreground);
-                opacity: 0.7;
-            }
             img {
                 display: block;
                 margin: 20px auto;
@@ -197,6 +168,14 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
         <title>Mr. Goose</title>
     </head>
     <body>
+        <div id="snippetContainer" style="
+        margin-top: 15px;
+        border-top: 1px solid var(--vscode-editor-foreground);
+        padding-top: 10px;
+        display: none;">
+        <h3 style="color: var(--vscode-editor-foreground)">Code Snippets</h3>
+        <div id="snippetsList"></div>
+        </div>
         <div class="title">Mr. Goose</div>
         <img src="${imageUri}" alt="Mr. Goose" />
         <div class="dialog" id="dialog"></div>
@@ -208,53 +187,28 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
             <textarea class="input-container-input" id="featureInput" placeholder="Describe your feature..."></textarea>
             <button class="submit-feature-button" id="submitFeatureButton">Submit</button>
         </div>
-        <div class="file-tag" id="fileTag"></div>
         <script>
             const dialogText = "🪿 Honk! Are we adding something shiny and new, or chasing down a sneaky bug? And where in this messy nest of code are we poking today?";
             const dialogElement = document.getElementById("dialog");
-            const fileTagElement = document.getElementById("fileTag");
             const buttonContainer = document.getElementById("buttonContainer");
             const gooseImage = document.querySelector("img");
             const vscode = acquireVsCodeApi();
-            
-            const serverURL = "ws://localhost:3000";
-            const helpSocket = new WebSocket(serverURL + "/help");
-            
             let typingTimeout; // Store the timeout ID
             let index = 0;
             let isDialogPlaying = false; // Track if dialog is playing
-            let currentEditorCode = ""; // Store current editor code
-            let currentFileName = "";   // Store current file name
-            
-            // Listen for editor code updates from extension
-            window.addEventListener('message', event => {
-                const message = event.data;
-                
-                if (message.command === 'updateEditorCode') {
-                    currentEditorCode = message.code;
-                    currentFileName = message.fileName;
-                    fileTagElement.textContent = currentFileName; // Update file tag
-                    console.log("Received editor code for:", currentFileName);
-                }
-            });
             
             function typeDialog(text, callback) {
                 if (typingTimeout) {
                     clearTimeout(typingTimeout); // Stop any ongoing typing effect
                 }
+                dialogElement.textContent = ""; // Clear existing text
                 index = 0;
-                dialogElement.textContent = ""; // Clear previous text
-                dialogElement.innerHTML = ""; // Also clear HTML content
                 isDialogPlaying = true;
                 gooseImage.src = gooseImage.src.replace("goose_closed.png", "goose_animated.gif"); // Show animated GIF
-                
+            
                 function type() {
                     if (index < text.length) {
-                        const char = text.charAt(index);
-                        
-                        dialogElement.innerHTML += char;
-                      
-                      
+                        dialogElement.textContent += text.charAt(index);
                         index++;
                                     
                         if (index % 3 === 0) {
@@ -274,49 +228,6 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 type();
             }
             
-            // Handle streamed responses better
-            function handleStreamedResponse() {
-                let responseBuffer = "";
-                let isStreaming = false;
-                
-                helpSocket.onmessage = function(event) {
-                    const data = event.data;
-                    
-                    // Handle stream start marker
-                    if (data === "Startstreaming") {
-                        console.log("Stream started");
-                        responseBuffer = "";
-                        dialogElement.textContent = "";
-                        return;
-                    }
-                    
-                    // Handle stream end marker
-                    if (data === "Endstreaming") {
-                        console.log("Stream ended");
-                        isStreaming = false;
-                        return;
-                    }
-                    
-                    if (responseBuffer === "") {
-                        dialogElement.textContent = "";
-                        responseBuffer = data;
-                        typeDialog(responseBuffer);
-                    } else {
-                        // Append to buffer and update the dialog text
-                        responseBuffer += data;
-                        
-                        // Stop current typing
-                        if (typingTimeout) {
-                            clearTimeout(typingTimeout);
-                        }
-                        
-                        // Start new typing with updated text
-                        dialogElement.textContent = "";
-                        typeDialog(responseBuffer);
-                    }
-                };
-            }
-            
             // Start typing effect
             setTimeout(() => typeDialog(dialogText), 500);
             
@@ -326,26 +237,98 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 buttonContainer.style.display = "none"; // Hide buttons
                 document.getElementById("inputContainer").style.display = "block"; // Show input box
                 // Play a random honk sound
-                vscode.postMessage({ command: "playHonk", honkFile: \`honk${Math.floor(Math.random() * 2) + 1}.mp3\` });
+                vscode.postMessage({ command: "playHonk", honkFile: \`honk${
+                  Math.floor(Math.random() * 2) + 1
+                }.mp3\` });
             });
             
             document.getElementById("submitFeatureButton").addEventListener("click", () => {
                 const featureInput = document.getElementById("featureInput").value;
                 if (featureInput.trim() !== "") {
-                    helpSocket.send(JSON.stringify({ message: featureInput, code: currentEditorCode }));
-                    dialogElement.textContent = "";
-                    handleStreamedResponse();
+                    typeDialog(\`🪿 Honk! That sounds like a great idea. Let's get to work!\`);
                     document.getElementById("inputContainer").style.display = "none"; // Hide input box
                     vscode.postMessage({ command: "submitFeature", feature: featureInput });
-                    vscode.postMessage({ command: "playHonk", honkFile: \`honk${Math.floor(Math.random() * 2) + 1}.mp3\` });
+                    vscode.postMessage({ command: "playHonk", honkFile: \`honk${
+                      Math.floor(Math.random() * 2) + 1
+                    }.mp3\` });
                 }
             });
             
             document.getElementById("debugButton").addEventListener("click", () => {
                 console.log("Debug button clicked");
             });
+            const socket = new WebSocket("ws://localhost:3000/help");
+
+            // where the message handler is 
+            socket.onmessage = (event) => {
+                if (event.data === "Startstreaming") {
+                    dialogElement.textContent = "";
+                    return;
+                }
+
+                if (event.data === "Endstreaming") {
+                    return;
+                }
+
+                // Handle snippet packets
+                try {
+                    const msg = JSON.parse(event.data);
+                    if (msg.type === "snippets") {
+                        showSnippets(msg.snippets);
+                        return;
+                    }
+                } catch {
+                    // Normal text message
+                    dialogElement.textContent += event.data;
+                }
+            };
+
+            function showSnippets(snippets) {
+                const container = document.getElementById("snippetContainer");
+                const list = document.getElementById("snippetsList");
+                
+                list.innerHTML = snippets.map((snippet, i) => \`
+                    <div class="snippet" style="
+                        background: var(--vscode-editor-background);
+                        padding: 10px;
+                        margin: 10px 0;
+                        border-radius: 4px;
+                        position: relative;
+                    ">
+                        <pre style="margin: 0; white-space: pre-wrap;">\${escapeHtml(snippet)}</pre>
+                        <button onclick="insertSnippet(\${i})" style="
+                            position: absolute;
+                            top: 5px;
+                            right: 5px;
+                            padding: 3px 6px;
+                            background: var(--button-color);
+                            color: white;
+                            border: none;
+                            border-radius: 2px;
+                            cursor: pointer;
+                        ">Insert</button>
+                    </div>
+                \`).join("");
+
+                container.style.display = "block";
+            }
+
+            function insertSnippet(index) {
+                const snippet = document.querySelectorAll(".snippet pre")[index].textContent;
+                vscode.postMessage({
+                    command: "insertSnippet",
+                    text: snippet
+                });
+            }
+
+            function escapeHtml(unsafe) {
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;");
+            }
         </script>
     </body>
     </html>`;
-    }
+  }
 }
