@@ -57,18 +57,18 @@ export function activate(context: vscode.ExtensionContext) {
             textDecoration: "none; position: absolute; z-index: 1000; pointer-events: none;",
         }
     });
-    if (editor) {
-        const position = editor.selection.active;
-        const range = new vscode.Range(position, position);
-        editor.setDecorations(deco, [range]);
-    }
+    // if (editor) {
+    //     const position = editor.selection.active;
+    //     const range = new vscode.Range(position, position);
+    //     editor.setDecorations(deco, [range]);
+    // }
 
-    vscode.window.onDidChangeTextEditorSelection(event => {
-        const editor = event.textEditor;
-        const position = editor.selection.active;
-        const range = new vscode.Range(position, position);
-        editor.setDecorations(deco, [range]);
-    });
+    // vscode.window.onDidChangeTextEditorSelection(event => {
+    //     const editor = event.textEditor;
+    //     const position = editor.selection.active;
+    //     const range = new vscode.Range(position, position);
+    //     editor.setDecorations(deco, [range]);
+    // });
 }
 
 class GooseViewProvider2 implements vscode.WebviewViewProvider {
@@ -397,7 +397,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
             }
             
             .code-snippet {
-                background-color: rgb(65, 58, 53);
+                background-color: rgb(42,38,36);
                 color: rgb(240, 240, 240);
                 padding: 2px 4px;
                 border-radius: 4px;
@@ -442,6 +442,24 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 margin: 0 5px;
                 transform: scale(-1, 1); /* Flip the image */
             }
+            
+            .quote-box {
+                display: flex;
+                justify-content: center;
+                width: 100%;
+                align-items: end;
+                position: fixed;
+                bottom: 150px;
+                height: auto;
+            }
+            
+            .quote {
+                font-family: "Pixelify Sans", sans-serif;
+                font-size: 30px;
+                color: rgba(31,27,25,0.6);
+                text-align: center;
+                max-width: 80%;
+            }
         </style>
         <title>Mr. Goose</title>
     </head>
@@ -460,6 +478,9 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
             <textarea class="input-container-input" id="featureInput" placeholder="Describe your feature..."></textarea>
             <button class="submit-feature-button" id="submitFeatureButton">Submit</button>
         </div>
+        <div class="quote-box">
+            <h1 class="quote" id="quote"></h1>
+        </div>
         <div class="geese-line">
             <img id="goose-big" class="walking-geese-big" src="${frameUris[0]}" alt="Walking goose"/>
             <img id="goose-small-1" class="walking-geese-small" src="${frameUris[0]}" alt="Walking goose"/>
@@ -467,6 +488,27 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
             <img id="goose-small-3" class="walking-geese-small" src="${frameUris[0]}" alt="Walking goose"/>
         </div>
         <script>
+            const gooseQuotes = [
+              "Honk loud. Fix proud.",
+              "You're flying now!",
+              "Mistakes are just crunchy snacks.",
+              "The nest wasn’t built in a day.",
+              "Feathers ruffled? You’re learning!",
+              "Go full goose on that feature!",
+              "No migration without iteration!",
+              "A true goose never hardcodes the route."
+            ];
+            
+            // Set random quote
+            const randomQuote = gooseQuotes[Math.floor(Math.random() * gooseQuotes.length)];
+            document.getElementById("quote").textContent = '"' + randomQuote + '"';
+
+            // Change quote every 15 seconds
+            setInterval(() => {
+                const randomQuote = gooseQuotes[Math.floor(Math.random() * gooseQuotes.length)];
+                document.getElementById("quote").textContent = '"' + randomQuote + '"';
+            }, 15000);
+            
             const frameUris = [${frameUriStrings}];
             let currentFrame = 0;
             const gooseIds = ["goose-big", "goose-small-1", "goose-small-2", "goose-small-3"];
