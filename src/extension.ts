@@ -1,7 +1,8 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { exec } from "child_process";
-import { CodeExercisePanel } from "./codeExercisePanel";
+import {exec} from "child_process";
+import {CodeExercisePanel} from "./codeExercisePanel";
+import {TextEditor, TextEditorDecorationType} from "vscode";
 
 export function activate(context: vscode.ExtensionContext) {
     const gooseViewProvider = new GooseViewProvider(context.extensionUri);
@@ -45,6 +46,28 @@ export function activate(context: vscode.ExtensionContext) {
         if (gooseViewProvider._view) {
             gooseViewProvider._view.webview.postMessage({command: 'advanceGooseFrame'});
         }
+    });
+
+    // Show the decoration at the cursor position
+    const editor = vscode.window.activeTextEditor;
+    const deco = vscode.window.createTextEditorDecorationType({
+        before: {
+            contentIconPath: vscode.Uri.joinPath(context.extensionUri, "assets", "goose_closed.png"),
+            margin: "0 0 0 -1em",
+            textDecoration: "none; position: absolute; z-index: 1000; pointer-events: none;",
+        }
+    });
+    if (editor) {
+        const position = editor.selection.active;
+        const range = new vscode.Range(position, position);
+        editor.setDecorations(deco, [range]);
+    }
+
+    vscode.window.onDidChangeTextEditorSelection(event => {
+        const editor = event.textEditor;
+        const position = editor.selection.active;
+        const range = new vscode.Range(position, position);
+        editor.setDecorations(deco, [range]);
     });
 }
 
@@ -181,13 +204,36 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 const code = message.code.split("\n").slice(1, -1).join("\n");
                 console.log(code);
                 console.log("attempt to open code exercise panel");
-                if(vscode.window.activeTextEditor){
+                if (vscode.window.activeTextEditor) {
                     CodeExercisePanel.createOrShow(this._extensionUri, vscode.window.activeTextEditor.document.getText(), code, "Mr. Goose's Code Exercise");
                 }
             }
         });
 
         this.playAudioWithFfplay("squawk1.mp3");
+    }
+
+    private errors: TextEditorDecorationType[] = [];
+
+    private showErrorGoose(editor: TextEditor, lineNumber: number, characterNumber: number) {
+        const decoration = vscode.window.createTextEditorDecorationType({
+            before: {
+                contentIconPath: vscode.Uri.joinPath(this._extensionUri, "assets", "goose_closed.png"),
+                margin: "0 0 0 -1em",
+                textDecoration: "none; position: absolute; z-index: 1000; pointer-events: none;",
+            }
+        });
+        const position = new vscode.Position(lineNumber, characterNumber);
+        const range = new vscode.Range(position, position);
+        editor.setDecorations(decoration, [range]);
+        this.errors.push(decoration);
+    }
+
+    private removeErrorGoose(editor: TextEditor) {
+        this.errors.forEach(decoration => {
+            editor.setDecorations(decoration, []);
+        });
+        this.errors = [];
     }
 
     public playAudioWithFfplay(fileName: string, volume: number = 100) {
