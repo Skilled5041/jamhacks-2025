@@ -201,7 +201,8 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 this.playAudioWithFfplay(soundFile, 20);
             } else if (message.command === "insertCodeSnippet") {
                 // Get the code from the message
-                const code = message.code.split("\n").slice(1, -1).join("\n");
+                //const code = message.code.split("\n").slice(1, -1).join("\n");
+                const code = message.code;
                 console.log(code);
                 console.log("attempt to open code exercise panel");
                 if (vscode.window.activeTextEditor) {
@@ -452,7 +453,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
         <div class="dialog" id="dialog"></div>
         <div class="button-container" id="buttonContainer">
             <button id="addFeatureButton">Add New Feature</button>
-            <button id="debugButton">Debug</button>
+            <button id="FITBButton">Fill-in-the-blanks</button>
         </div>
         <div class="input-container" id="inputContainer" style="display: none;">
             <textarea class="input-container-input" id="featureInput" placeholder="Describe your feature..."></textarea>
@@ -479,6 +480,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 }
                 console.log(event.data);
             });
+                    
         
             const dialogText = "🪿 Honk! Are we adding something shiny and new, or chasing down a sneaky bug? And where in this messy nest of code are we poking today?";
             const dialogElement = document.getElementById("dialog");
@@ -700,37 +702,64 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 };
             }
             
+            let FTIB = false;
+            const FTIBSocket = new WebSocket(serverURL + "/fitb");
+            
             // Start typing effect
             setTimeout(() => typeDialog(dialogText), 500);
             
             // Button click handlers
             document.getElementById("addFeatureButton").addEventListener("click", () => {
-                typeDialog("🪿 Honk! What shiny idea are we hatching today? What should it do when it flaps to life?");
+                FTIB = false;
+                typeDialog("🪿 Honk! What shiny idea are we hatching today?");
                 buttonContainer.style.display = "none"; // Hide buttons
                 document.getElementById("inputContainer").style.display = "block"; // Show input box
                 // Play a random honk sound
-                vscode.postMessage({ command: "playHonk", honkFile: \`honk${Math.floor(Math.random() * 3) + 1}.mp3\` });
+                vscode.postMessage({ command: "playHonk", honkFile: "honk"+(Math.floor(Math.random() * 3) + 1)+".mp3" });
             });
             
             document.getElementById("mrgoose").addEventListener("click", () => {
-                vscode.postMessage({ command: "playHonk", honkFile: \`honk${Math.floor(Math.random() * 3) + 1}.mp3\` });
+                vscode.postMessage({ command: "playHonk", honkFile: "honk"+(Math.floor(Math.random() * 3) + 1)+".mp3" });
             });
             
-            document.getElementById("submitFeatureButton").addEventListener("click", () => {
+            document.getElementById("submitFeatureButton").addEventListener("click", async () => {
                 const featureInput = document.getElementById("featureInput").value;
                 if (featureInput.trim() !== "") {
-                    helpSocket.send(JSON.stringify({ message: featureInput, code: currentEditorCode }));
-                    document.getElementById("featureInput").value = "";
-                    dialogElement.textContent = "";
-                    handleStreamedResponse();
-                    // document.getElementById("inputContainer").style.display = "none"; // Hide input box
-                    vscode.postMessage({ command: "submitFeature", feature: featureInput });
-                    vscode.postMessage({ command: "playHonk", honkFile: \`honk${Math.floor(Math.random() * 2) + 1}.mp3\` });
+                    if (FTIB){
+                        document.getElementById("featureInput").value = "";
+                        dialogElement.textContent = "";
+                        typeDialog("🪿 Honk! Generating...");
+                        try {
+                            FTIBSocket.onmessage = async function update(event){
+                                console.log(event.data);
+                                vscode.postMessage({command:"insertCodeSnippet", code: event.data});
+                                FTIBSocket.close();
+                            };
+                            FTIBSocket.send(JSON.stringify({"message": featureInput, "code": currentEditorCode}));
+                            
+                        } catch (error) {
+                            console.error("Websocket error:", error);
+                            typeDialog("🪿 Honk! I had trouble connecting to the server. Please check the console for details.");
+                        }
+                    } else{
+                        helpSocket.send(JSON.stringify({ message: featureInput, code: currentEditorCode }));
+                        document.getElementById("featureInput").value = "";
+                        dialogElement.textContent = "";
+                        handleStreamedResponse();
+                        // document.getElementById("inputContainer").style.display = "none"; // Hide input box
+                        vscode.postMessage({ command: "submitFeature", feature: featureInput });
+                        vscode.postMessage({ command: "playHonk", honkFile: "honk"+(Math.floor(Math.random() * 2) + 1)+".mp3" });
+                    }
                 }
             });
             
-            document.getElementById("debugButton").addEventListener("click", () => {
-                console.log("Debug button clicked");
+            document.getElementById("FITBButton").addEventListener("click", () => {
+                FTIB = true;
+                typeDialog("🪿 Honk! What would you like to be quizzed on?");
+                buttonContainer.style.display = "none"; // Hide buttons
+                document.getElementById("inputContainer").style.display = "block"; // Show input box
+                // Play a random honk sound
+                vscode.postMessage({ command: "playHonk", honkFile: "honk"+(Math.floor(Math.random() * 3) + 1)+".mp3" });
             });
         </script>
     </body>
