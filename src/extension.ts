@@ -115,6 +115,8 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
     private _getHtmlForWebview(webview: vscode.Webview): string {
         const imagePath = vscode.Uri.joinPath(this._extensionUri, "assets", "goose_animated.gif");
         const imageUri = webview.asWebviewUri(imagePath);
+        const bgPath = vscode.Uri.joinPath(this._extensionUri, "assets", "background.png");
+        const bgUri = webview.asWebviewUri(bgPath);
         const imagePath2 = vscode.Uri.joinPath(this._extensionUri, "assets", "geese-line.png");
         const imageUri2 = webview.asWebviewUri(imagePath2);
 
@@ -149,7 +151,9 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 padding: 10px;
                 font-family: var(--vscode-editor-font-family), sans-serif;
                 font-size: var(--vscode-editor-font-size);
-                background-color: #efeada; /* Set background to white */
+                background: url('${bgUri}');
+                background-size: cover;
+                overflow: hidden;
                 color: var(--vscode-editor-foreground); /* Ensure text color remains readable */
             }
             .frame {
