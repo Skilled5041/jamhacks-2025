@@ -26,9 +26,9 @@
           "icon": "$(watch)"
         },
         {
-            "id": "mrgoose-sidebar-2",
-            "title": "MrGoose 2",
-            "icon": "$(watch)"
+          "id": "mrgoose-sidebar-2",
+          "title": "MrGoose 2",
+          "icon": "$(watch)"
         }
       ]
     },
@@ -40,9 +40,9 @@
           "type": "webview"
         },
         {
-            "id": "gooseView2",
-            "name": "MrGoose 2",
-            "type": "webview"
+          "id": "gooseView2",
+          "name": "MrGoose 2",
+          "type": "webview"
         }
       ]
     }
@@ -65,5 +65,8 @@
     "typescript": "^5.8.3",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.5.2"
+  },
+  "dependencies": {
+    "ws": "^8.18.2"
   }
 }

@@ -3,6 +3,7 @@ import * as path from "path";
 import {exec} from "child_process";
 import {CodeExercisePanel} from "./codeExercisePanel";
 import {TextEditor, TextEditorDecorationType} from "vscode";
+import Websocket from "ws";
 
 export function activate(context: vscode.ExtensionContext) {
     const gooseViewProvider = new GooseViewProvider(context.extensionUri);
@@ -62,6 +63,26 @@ export function activate(context: vscode.ExtensionContext) {
     //     const range = new vscode.Range(position, position);
     //     editor.setDecorations(deco, [range]);
     // }
+
+    const analysisSocket = new Websocket("ws://localhost:3000/analyze");
+    analysisSocket.on("message", (data) => {
+        const message = JSON.parse(data.toString());
+        if (message.errors.length > 0) {
+            const editor = vscode.window.activeTextEditor;
+            if (editor) {
+                const lineNumber = message.errors[0].line - 1;
+                const characterNumber = message.errors[0].column - 1;
+                const range = new vscode.Range(lineNumber, characterNumber, lineNumber, characterNumber);
+                editor.setDecorations(deco, [range]);
+            }
+        }
+    });
+
+    vscode.workspace.onDidSaveTextDocument(event => {
+        analysisSocket.send(JSON.stringify({
+            code: event?.getText(),
+        }));
+    });
 
     // vscode.window.onDidChangeTextEditorSelection(event => {
     //     const editor = event.textEditor;
