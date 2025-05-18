@@ -52,7 +52,7 @@ export function activate(context: vscode.ExtensionContext) {
     const editor = vscode.window.activeTextEditor;
     const deco = vscode.window.createTextEditorDecorationType({
         before: {
-            contentIconPath: vscode.Uri.joinPath(context.extensionUri, "assets", "goose_closed.png"),
+            contentIconPath: vscode.Uri.joinPath(context.extensionUri, "assets", "goose-point.png"),
             margin: "0 0 0 -1em",
             textDecoration: "none; position: absolute; z-index: 1000; pointer-events: none;",
         }
@@ -218,7 +218,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
     private showErrorGoose(editor: TextEditor, lineNumber: number, characterNumber: number) {
         const decoration = vscode.window.createTextEditorDecorationType({
             before: {
-                contentIconPath: vscode.Uri.joinPath(this._extensionUri, "assets", "goose_closed.png"),
+                contentIconPath: vscode.Uri.joinPath(this._extensionUri, "assets", "goose-point.png"),
                 margin: "0 0 0 -1em",
                 textDecoration: "none; position: absolute; z-index: 1000; pointer-events: none;",
             }
