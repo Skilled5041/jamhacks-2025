@@ -340,6 +340,8 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 border-radius: 20px;
                 font-style: italic;
                 min-height: 50px;
+                max-height: 200px;
+                overflow-y: auto;
             }
             .file-tag {
                 margin-top: 5px;
