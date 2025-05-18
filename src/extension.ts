@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import {exec} from "child_process";
-import {CodeExercisePanel} from "./codeExercisePanel";
+import { exec } from "child_process";
+import { CodeExercisePanel } from "./codeExercisePanel";
 
 export function activate(context: vscode.ExtensionContext) {
     const gooseViewProvider = new GooseViewProvider(context.extensionUri);
@@ -181,7 +181,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 const code = message.code.split("\n").slice(1, -1).join("\n");
                 console.log(code);
                 console.log("attempt to open code exercise panel");
-                if (vscode.window.activeTextEditor) {
+                if(vscode.window.activeTextEditor){
                     CodeExercisePanel.createOrShow(this._extensionUri, vscode.window.activeTextEditor.document.getText(), code, "Mr. Goose's Code Exercise");
                 }
             }
@@ -219,7 +219,11 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
             );
             frameUris.push(webview.asWebviewUri(framePath));
         }
+        const bgPath = vscode.Uri.joinPath(this._extensionUri, "assets", "background.png");
         const frameUriStrings = frameUris.map(uri => `"${uri}"`).join(",");
+        const bgUri = webview.asWebviewUri(bgPath);
+        const imagePath2 = vscode.Uri.joinPath(this._extensionUri, "assets", "geese-line.png");
+        const imageUri2 = webview.asWebviewUri(imagePath2);
 
         return `<!DOCTYPE html>
     <html lang="en">
@@ -252,7 +256,9 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 padding: 10px;
                 font-family: var(--vscode-editor-font-family), sans-serif;
                 font-size: var(--vscode-editor-font-size);
-                background-color: #efeada; /* Set background to white */
+                background: url('${bgUri}');
+                background-size: cover;
+                overflow: hidden;
                 color: var(--vscode-editor-foreground); /* Ensure text color remains readable */
             }
             .frame {
@@ -282,7 +288,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 margin-bottom: 12px;
                 padding: 10px;
                 color: rgb(240, 240, 240);
-                background-color: rgb(65, 58, 53);
+                background-color: rgb(65, 58, 53, 0.6);
                 border: 1px solid var(--vscode-editor-foreground);
                 border-radius: 20px;
                 font-style: italic;
