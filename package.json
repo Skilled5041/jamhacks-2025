@@ -14,8 +14,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "mrgoose.addColor",
-        "title": "Add color"
+        "command": "mrgoose.insertSnippet",
+        "title": "Insert a test snippet"
       }
     ],
     "viewsContainers": {
