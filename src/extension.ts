@@ -115,6 +115,8 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
     private _getHtmlForWebview(webview: vscode.Webview): string {
         const imagePath = vscode.Uri.joinPath(this._extensionUri, "assets", "goose_animated.gif");
         const imageUri = webview.asWebviewUri(imagePath);
+        const imagePath2 = vscode.Uri.joinPath(this._extensionUri, "assets", "geese-line.png");
+        const imageUri2 = webview.asWebviewUri(imagePath2);
 
         return `<!DOCTYPE html>
     <html lang="en">
@@ -257,6 +259,15 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 transform: scale(1.1);
                 transition: transform 0.2s ease-in-out;
             }
+            
+            .geese-line {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: auto;
+                z-index: -1; /* Ensure it stays behind other elements */
+            }
         </style>
         <title>Mr. Goose</title>
     </head>
@@ -266,15 +277,16 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
             <img id="mrgoose" class="mrgoose" src="${imageUri}" alt="Mr. Goose" />
         </div>
         <div class="file-tag" id="fileTag"></div>
-            <div class="dialog" id="dialog"></div>
-            <div class="button-container" id="buttonContainer">
-                <button id="addFeatureButton">Add New Feature</button>
-                <button id="debugButton">Debug</button>
-            </div>
-            <div class="input-container" id="inputContainer" style="display: none;">
-                <textarea class="input-container-input" id="featureInput" placeholder="Describe your feature..."></textarea>
-                <button class="submit-feature-button" id="submitFeatureButton">Submit</button>
-            </div>
+        <div class="dialog" id="dialog"></div>
+        <div class="button-container" id="buttonContainer">
+            <button id="addFeatureButton">Add New Feature</button>
+            <button id="debugButton">Debug</button>
+        </div>
+        <div class="input-container" id="inputContainer" style="display: none;">
+            <textarea class="input-container-input" id="featureInput" placeholder="Describe your feature..."></textarea>
+            <button class="submit-feature-button" id="submitFeatureButton">Submit</button>
+        </div>
+        <img class="geese-line" src="${imageUri2}" alt="Goose Line" style="width: 100%;"/>
         <script>
             const dialogText = "🪿 Honk! Are we adding something shiny and new, or chasing down a sneaky bug? And where in this messy nest of code are we poking today?";
             const dialogElement = document.getElementById("dialog");
