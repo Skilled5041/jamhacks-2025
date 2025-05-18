@@ -179,7 +179,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 margin-bottom: 12px;
                 padding: 10px;
                 color: rgb(240, 240, 240);
-                background-color: rgb(65, 58, 53);
+                background-color: rgb(65, 58, 53, 0.6);
                 border: 1px solid var(--vscode-editor-foreground);
                 border-radius: 20px;
                 font-style: italic;
