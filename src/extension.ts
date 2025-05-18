@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import { exec } from "child_process";
+import { CodeExercisePanel } from "./codeExercisePanel";
 
 export function activate(context: vscode.ExtensionContext) {
     const gooseViewProvider = new GooseViewProvider(context.extensionUri);
@@ -64,16 +65,6 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
         }
     }
 
-    private insertSnippetIntoEditor(text: string) {
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-            const snippet = new vscode.SnippetString(
-                text
-            );
-            editor.insertSnippet(snippet);
-        }
-    }
-
     resolveWebviewView(
         webviewView: vscode.WebviewView,
         context: vscode.WebviewViewResolveContext,
@@ -96,7 +87,13 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 const soundFile = `dialog/Retro_Single_v${message.soundNumber}_wav.wav`;
                 this.playAudioWithFfplay(soundFile, 20);
             } else if (message.command === "insertCodeSnippet") {
-                this.insertSnippetIntoEditor(message.code);
+                // Get the code from the message
+                const code = message.code.split("\n").slice(1, -1).join("\n");
+                console.log(code);
+                console.log("attempt to open code exercise panel");
+                if(vscode.window.activeTextEditor){
+                    CodeExercisePanel.createOrShow(this._extensionUri, vscode.window.activeTextEditor.document.getText(), code, "Mr. Goose's Code Exercise");
+                }
             }
         });
 
@@ -432,6 +429,9 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 const codeSnippetMarker = "💎";
                 let codeSnippet = "";
                 
+                let codeInsertion = false;
+                let codeInsert = "";
+                
                 helpSocket.onmessage = function(event) {
                     const data = event.data;
                     
@@ -446,6 +446,19 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                     // Handle stream end marker
                     else if (data === "Endstreaming") {
                         console.log("Stream ended");
+                        if (codeInsertion){
+                            console.log("try code insert");
+                            vscode.postMessage({ command: "insertCodeSnippet", code: codeInsert });
+                        }
+                        return;
+                    }
+                    
+                    if(data === "codeinsertion" || codeInsertion) {
+                        if(codeInsertion){
+                            console.log("code insertion");
+                            codeInsert += data;
+                        }
+                        codeInsertion = true;
                         return;
                     }
                     
@@ -455,7 +468,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                         typeDialog(responseBuffer);
                     } else {
 
-                    if (data.includes(codeSnippetMarker)) {
+                        if (data.includes(codeSnippetMarker)) {
                             isCodeSnippet = !isCodeSnippet;
                             if (!isCodeSnippet) {
                                 if (!data.startsWith(codeSnippetMarker)) {
@@ -470,7 +483,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                             codeSnippet += data;
                             return;
                         }
-
+                        
                         // Append to buffer and update the dialog text
                         responseBuffer += data;
                         console.log(responseBuffer);
@@ -532,3 +545,4 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
     </html>`;
     }
 }
+
