@@ -1,10 +1,14 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { exec } from "child_process";
-import { CodeExercisePanel } from "./codeExercisePanel";
+import {exec} from "child_process";
+import {CodeExercisePanel} from "./codeExercisePanel";
 
 export function activate(context: vscode.ExtensionContext) {
     const gooseViewProvider = new GooseViewProvider(context.extensionUri);
+    const gooseViewProvider2 = new GooseViewProvider2(context.extensionUri);
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider("gooseView2", gooseViewProvider2)
+    );
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider("gooseView", gooseViewProvider)
     );
@@ -36,6 +40,92 @@ export function activate(context: vscode.ExtensionContext) {
             gooseViewProvider.updateActiveEditorCode();
         }
     }, 500);
+
+    vscode.workspace.onDidChangeTextDocument(event => {
+        if (gooseViewProvider._view) {
+            gooseViewProvider._view.webview.postMessage({command: 'advanceGooseFrame'});
+        }
+    });
+}
+
+class GooseViewProvider2 implements vscode.WebviewViewProvider {
+    public _view?: vscode.WebviewView;
+
+    constructor(private readonly _extensionUri: vscode.Uri) {
+    }
+
+    resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        context: vscode.WebviewViewResolveContext,
+        _token: vscode.CancellationToken
+    ) {
+        this._view = webviewView;
+
+        webviewView.webview.options = {
+            enableScripts: true,
+            localResourceRoots: [this._extensionUri],
+        };
+
+        webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+    }
+
+    private _getHtmlForWebview(webview: vscode.Webview): string {
+        const frameCount = 8;
+        const frameUris = [];
+        for (let i = 0; i < frameCount; i++) {
+            const framePath = vscode.Uri.joinPath(
+                this._extensionUri,
+                "assets",
+                `frame_${i}_delay-0.13s.gif`
+            );
+            frameUris.push(webview.asWebviewUri(framePath));
+        }
+
+        // Create a JS array of frame URIs as strings
+        const frameUriStrings = frameUris.map(uri => `"${uri}"`).join(",");
+
+        return `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body {
+                        background: #d5d4cf;
+                        margin: 0;
+                        padding: 0;
+                        overflow: hidden;
+                    }
+                    .goose-frame {
+                        position: fixed;
+                        top: 10px;
+                        right: 10px;
+                        width: 64px;
+                        height: 64px;
+                        z-index: 1000;
+                        pointer-events: none;
+                        user-select: none;
+                    }
+                </style>
+            </head>
+            <body>
+                <img id="goose" class="goose-frame" src="${frameUris[0]}" alt="Goose Frame" />
+                <script>
+                    const frameUris = [${frameUriStrings}];
+                    let currentFrame = 0;
+                    const gooseImg = document.getElementById('goose');
+            
+                    window.addEventListener('message', event => {
+                        if (event.data && event.data.command === 'advanceGooseFrame') {
+                            currentFrame = (currentFrame + 1) % frameUris.length;
+                            gooseImg.src = frameUris[currentFrame];
+                        }
+                    });
+                </script>
+            </body>
+            </html>
+                `;
+    }
 }
 
 class GooseViewProvider implements vscode.WebviewViewProvider {
@@ -91,7 +181,7 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
                 const code = message.code.split("\n").slice(1, -1).join("\n");
                 console.log(code);
                 console.log("attempt to open code exercise panel");
-                if(vscode.window.activeTextEditor){
+                if (vscode.window.activeTextEditor) {
                     CodeExercisePanel.createOrShow(this._extensionUri, vscode.window.activeTextEditor.document.getText(), code, "Mr. Goose's Code Exercise");
                 }
             }
@@ -115,8 +205,21 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
     private _getHtmlForWebview(webview: vscode.Webview): string {
         const imagePath = vscode.Uri.joinPath(this._extensionUri, "assets", "goose_animated.gif");
         const imageUri = webview.asWebviewUri(imagePath);
-        const imagePath2 = vscode.Uri.joinPath(this._extensionUri, "assets", "geese-line.png");
-        const imageUri2 = webview.asWebviewUri(imagePath2);
+        // const imagePath2 = vscode.Uri.joinPath(this._extensionUri, "assets", "geese-line.png");
+        // const imageUri2 = webview.asWebviewUri(imagePath2);
+        // Goose walking
+
+        const frameCount = 8;
+        const frameUris = [];
+        for (let i = 0; i < frameCount; i++) {
+            const framePath = vscode.Uri.joinPath(
+                this._extensionUri,
+                "assets",
+                `frame_${i}_delay-0.13s.gif`
+            );
+            frameUris.push(webview.asWebviewUri(framePath));
+        }
+        const frameUriStrings = frameUris.map(uri => `"${uri}"`).join(",");
 
         return `<!DOCTYPE html>
     <html lang="en">
@@ -261,12 +364,29 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
             }
             
             .geese-line {
+                display: flex;
+                justify-content: center;
+                align-items: end;
                 position: fixed;
                 bottom: 0;
                 left: 0;
-                width: 100%;
                 height: auto;
                 z-index: -1; /* Ensure it stays behind other elements */
+                pointer-events: none;
+            }
+            
+            .walking-geese-big {
+                width: 150px;
+                height: 150px;
+                margin: 0 5px;
+                transform: scale(-1, 1); /* Flip the image */
+            }
+            
+            .walking-geese-small {
+                width: 100px;
+                height: 100px;
+                margin: 0 5px;
+                transform: scale(-1, 1); /* Flip the image */
             }
         </style>
         <title>Mr. Goose</title>
@@ -286,8 +406,28 @@ class GooseViewProvider implements vscode.WebviewViewProvider {
             <textarea class="input-container-input" id="featureInput" placeholder="Describe your feature..."></textarea>
             <button class="submit-feature-button" id="submitFeatureButton">Submit</button>
         </div>
-        <img class="geese-line" src="${imageUri2}" alt="Goose Line" style="width: 100%;"/>
+        <div class="geese-line">
+            <img id="goose-big" class="walking-geese-big" src="${frameUris[0]}" alt="Walking goose"/>
+            <img id="goose-small-1" class="walking-geese-small" src="${frameUris[0]}" alt="Walking goose"/>
+            <img id="goose-small-2" class="walking-geese-small" src="${frameUris[0]}" alt="Walking goose"/>
+            <img id="goose-small-3" class="walking-geese-small" src="${frameUris[0]}" alt="Walking goose"/>
+        </div>
         <script>
+            const frameUris = [${frameUriStrings}];
+            let currentFrame = 0;
+            const gooseIds = ["goose-big", "goose-small-1", "goose-small-2", "goose-small-3"];
+            const geese = gooseIds.map(id => document.getElementById(id));
+
+            window.addEventListener('message', event => {
+                if (event.data && event.data.command === 'advanceGooseFrame') {
+                    currentFrame = (currentFrame + 1) % frameUris.length;
+                    geese.forEach(goose => {
+                        goose.src = frameUris[currentFrame];
+                    });
+                }
+                console.log(event.data);
+            });
+        
             const dialogText = "🪿 Honk! Are we adding something shiny and new, or chasing down a sneaky bug? And where in this messy nest of code are we poking today?";
             const dialogElement = document.getElementById("dialog");
             const fileTagElement = document.getElementById("fileTag");

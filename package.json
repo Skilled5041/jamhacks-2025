@@ -24,6 +24,11 @@
           "id": "mrgoose-sidebar",
           "title": "MrGoose",
           "icon": "$(watch)"
+        },
+        {
+            "id": "mrgoose-sidebar-2",
+            "title": "MrGoose 2",
+            "icon": "$(watch)"
         }
       ]
     },
@@ -33,6 +38,11 @@
           "id": "gooseView",
           "name": "MrGoose",
           "type": "webview"
+        },
+        {
+            "id": "gooseView2",
+            "name": "MrGoose 2",
+            "type": "webview"
         }
       ]
     }
