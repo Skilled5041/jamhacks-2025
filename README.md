@@ -1,71 +1,34 @@
-# mrgoose README
+# Mr Goose
+**JamHacks 2025 Submission**
 
-This is the README for your extension "mrgoose". After writing up a brief description, we recommend including the following sections.
+## Description
 
-## Features
+Mr. Goose is a helpful all-in-one VS Code extension that supports beginners while still encouraging learning through problem-solving. Mr. Goose is a chaotic but charming assistant that reacts to your code, nudges you when you’re stuck, and offers help in ways that don’t give away full solutions — just hints, encouragement, and occasional honks.
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+Instead of doing the work for you, Mr. Goose promotes exploration and thought. It mimics having a quirky friend in the editor, encouraging you to reason through errors rather than blindly pasting code. By combining humour, interactivity, and just the right amount of support, we aim to reinforce learning without removing the challenge.
 
-For example if there is an image subfolder under your extension project workspace:
+Key Features:
 
-\!\[feature X\]\(images/feature-x.png\)
+- 🪿 Animated Goose Companion: A goose appears in a sidebar, animated via frame-based sprite switching, with a chat feature to ask for help.
+- 📜 Live Code Feedback: The extension listens for file changes and suggests logical error fixes for the latest code from the active editor.
+- 🔍 Goose Pointer: A goose icon appears next to your cursor and error locations, providing a unique and fun way to highlight focus or mistakes.
+- 🔧 Fill-in-the-blank Guidance via Goose: Through goose commands, send code snippets to a dedicated panel, opening a new interactive interface for code exercises or review.
+- 💬 Dialogue and Sound Effects: The goose can “honk” or speak in retro dialogue sounds triggered by commands, adding a layer of personality.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## Links
 
-## Requirements
+Backend Repository: https://github.com/Skilled5041/jamhacks-2025-backend
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+Pitch Deck: https://www.canva.com/design/DAGnxSVgUfE/ADNYvaDstjGPTfR_Y0bLGQ/edit
 
-## Extension Settings
+## Screenshot
+<img width="1914" height="995" alt="image" src="https://github.com/user-attachments/assets/42bb643c-defe-4bbc-9aac-edc3bc791999" />
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+## Run Locally
+1. Clone this (fronend) repository
+3. `npm i`
+4. Clone the backend repository
+5. `bun i`
+6. `bun run dev`
+7. Open the frontend repository in VSCode
+8. Click "Run Extension" button in the bottom left corner
