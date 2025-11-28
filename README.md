@@ -1,5 +1,5 @@
 # Mr Goose
-**JamHacks 2025 Submission**
+🏆 **1st place @ JamHacks 2025**
 
 ## Description
 
